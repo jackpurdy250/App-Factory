@@ -1,0 +1,144 @@
+# App Factory - provider and role bindings.
+#
+# This file is the ONLY place a provider or model name may appear. Nothing in
+# core/ or agents/ references a vendor. That is what makes the system
+# portable: when quota runs out or you want to experiment, you edit this file
+# and run !reload. Bindings are re-read at the next stage boundary, never
+# mid-call.
+#
+# ---------------------------------------------------------------------------
+# Pointing App Factory at an AI
+# ---------------------------------------------------------------------------
+#
+# The short version: name a preset, supply a key, name a model.
+#
+#   [provider.primary]
+#   preset  = "openai"
+#   api_key = "env:PRIMARY_API_KEY"
+#
+# Presets live in config/providers.presets.toml and are just saved
+# (kind, base_url) pairs: openai, anthropic, google, xai, deepseek, mistral,
+# groq, cerebras, together, fireworks, openrouter, perplexity, moonshot,
+# qwen, ollama, lmstudio, vllm, llamacpp.
+#
+# You are never required to use one. The explicit form still works and wins
+# over anything a preset supplies, which is how you point at a gateway, a
+# proxy, or a vendor with no preset:
+#
+#   [provider.primary]
+#   kind     = "openai_compatible"
+#   base_url = "https://my-gateway.internal/v1"
+#   api_key  = "env:PRIMARY_API_KEY"
+#
+# `kind` is the WIRE FORMAT, not the company:
+#   openai_compatible     POST {base_url}/chat/completions
+#   anthropic_compatible  POST {base_url}/messages
+#   mock                  no network at all (see models.mock.toml)
+#
+# api_key accepts three forms and is REQUIRED for every non-mock provider:
+#   "env:NAME"      read from the environment / .env   <- use this
+#   "not-required"  provider needs no credential (local servers)
+#   any other string treated as a literal key (not recommended)
+#
+# A missing api_key is a startup error naming the block, not a 401 twenty
+# seconds into a build.
+
+
+# ---------------------------------------------------------------------------
+# Providers
+#
+# Three are declared because roles fall back in order: if `primary` is down,
+# rate-limited, or out of quota, the role retries on its fallback chain. They
+# do not have to be three different vendors - three keys at one vendor, or
+# one hosted plus one local, are both reasonable.
+# ---------------------------------------------------------------------------
+
+[provider.primary]
+preset  = "openai"
+api_key = "env:PRIMARY_API_KEY"
+
+[provider.secondary]
+preset  = "anthropic"
+api_key = "env:SECONDARY_API_KEY"
+
+[provider.local]
+# No key, no quota, no network egress. Override the port with base_url if
+# your server is elsewhere.
+preset = "ollama"
+
+
+# ---------------------------------------------------------------------------
+# Role bindings
+#
+# Every role takes the same shape. `model` is an opaque string passed straight
+# through to the provider; App Factory never validates it. Replace every
+# <model-id> below with a real model name for the provider you chose.
+#
+# structured = true  forces provider-native JSON-schema output.
+# structured = false falls back to prompt-enforced JSON with one repair retry.
+#                    The implementer MUST be false: its product is code on
+#                    disk, not JSON, and config loading rejects true.
+#
+# Optional per-role pricing drives the cost ceiling in governor.toml. Both
+# default to 0.0, which reports no spend - a wrong price is worse than an
+# absent one, because it would halt a build that still had budget:
+#
+#   cost_per_1k_prompt     = 0.0005
+#   cost_per_1k_completion = 0.0015
+# ---------------------------------------------------------------------------
+
+[roles.commander]
+provider    = "local"
+model       = "<model-id>"
+temperature = 0.0
+max_tokens  = 256
+structured  = true
+fallback    = []
+
+[roles.optimizer]
+provider    = "primary"
+model       = "<model-id>"
+temperature = 0.3
+max_tokens  = 2000
+structured  = true
+fallback    = ["secondary"]
+
+[roles.observer]
+provider    = "primary"
+model       = "<model-id>"
+temperature = 0.1
+max_tokens  = 4000
+structured  = true
+fallback    = ["secondary"]
+
+[roles.implementer]
+provider    = "primary"
+model       = "<model-id>"
+temperature = 0.2
+max_tokens  = 8000
+structured  = false
+fallback    = ["secondary"]
+
+[roles.qc]
+provider    = "primary"
+model       = "<model-id>"
+temperature = 0.0
+max_tokens  = 3000
+structured  = true
+fallback    = ["local"]
+
+[roles.design]
+provider    = "primary"
+model       = "<model-id>"
+temperature = 0.0
+max_tokens  = 3000
+structured  = true
+fallback    = ["local"]
+
+[roles.prompt_engineer]
+provider    = "primary"
+model       = "<model-id>"
+temperature = 0.2
+max_tokens  = 1500
+structured  = true
+fallback    = ["secondary"]

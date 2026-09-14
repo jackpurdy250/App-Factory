@@ -1,0 +1,40 @@
+# App Factory - the governor.
+#
+# Every number the pipeline enforces lives here. Edit these instead of
+# arguing with the pipeline: re-issuing commands until something passes is
+# not a decision, it is a habit. Changing this file is a decision with a
+# record.
+
+[budgets]
+# G2 - triple budget. Any single ceiling breach escalates to the operator.
+# None of them trigger a retry.
+max_iterations_per_build = 3
+max_tokens_per_build     = 250000
+max_wall_clock_seconds   = 900
+# Optional spend ceiling in USD. Omit or set to 0 to disable.
+max_cost_usd             = 0
+
+[gates]
+# G3 - only these severities can hold a build.
+blocking_severities   = ["blocker"]
+# A major issue gets this many fix attempts, then auto-converts to accepted
+# debt. Also caps design-polish loops, which is what stops the aesthetic
+# spiral that has no fixed point.
+major_fix_attempts    = 1
+# Design Critic rubric mean (0-10) required to clear the gate.
+design_pass_threshold = 7.0
+# G5 - a fingerprint seen this many times becomes a human decision instead of
+# another identical retry.
+repeat_offender_limit = 2
+
+[rules]
+# G7 - rule decay. Uncapped corrective rules are the hidden infinite loop.
+max_active  = 5
+default_ttl = 3
+
+[context]
+# Iterations kept verbatim before older ones collapse into the rolling digest.
+recent_iterations_verbatim = 2
+# Hard per-call projection ceiling. The budgeter trims before the call rather
+# than letting the provider truncate the reply.
+per_agent_token_cap        = 24000

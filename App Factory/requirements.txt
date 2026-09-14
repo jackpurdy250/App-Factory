@@ -1,0 +1,9 @@
+# App Factory runtime dependencies.
+#
+# Deliberately short. Provider calls use the standard library (urllib), so
+# swapping a model vendor never means adding an SDK here -- it is a change to
+# config/models.toml and nothing else.
+
+pydantic>=2.7,<3
+fastapi>=0.110
+uvicorn[standard]>=0.29

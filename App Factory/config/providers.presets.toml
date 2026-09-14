@@ -1,0 +1,122 @@
+# App Factory - vendor presets.
+#
+# A preset is nothing but a saved (kind, base_url) pair with a friendly name.
+# It exists so that pointing App Factory at a different AI is a two-line edit
+# in models.toml:
+#
+#   [provider.primary]
+#   preset  = "openai"
+#   api_key = "env:PRIMARY_API_KEY"
+#
+# Anything declared in models.toml wins over the preset, so you can borrow a
+# preset's wire format and override its base_url - proxies, gateways, a
+# self-hosted clone - without editing this file.
+#
+# Why this file and not code: core/ is vendor-neutral by rule. Every vendor
+# string in the system lives in config/, which is what makes swapping AI a
+# config change instead of a code change.
+#
+# `kind` is the WIRE FORMAT, not the company. Nearly every vendor now speaks
+# the OpenAI chat-completions shape, which is why most presets share it:
+#
+#   openai_compatible     POST {base_url}/chat/completions
+#   anthropic_compatible  POST {base_url}/messages
+#
+# `api_key` appears here only for local servers that need no credential.
+# Hosted presets deliberately omit it so models.toml has to supply one.
+#
+# Not covered: Azure OpenAI authenticates with an `api-key` header rather than
+# `Authorization: Bearer`, so it needs its own adapter or a gateway in front.
+# It is left out rather than shipped broken.
+
+
+# ---------------------------------------------------------------------------
+# Hosted
+# ---------------------------------------------------------------------------
+
+[preset.openai]
+kind     = "openai_compatible"
+base_url = "https://api.openai.com/v1"
+
+[preset.anthropic]
+kind     = "anthropic_compatible"
+base_url = "https://api.anthropic.com/v1"
+
+[preset.google]
+kind     = "openai_compatible"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+
+[preset.xai]
+kind     = "openai_compatible"
+base_url = "https://api.x.ai/v1"
+
+[preset.deepseek]
+kind     = "openai_compatible"
+base_url = "https://api.deepseek.com/v1"
+
+[preset.mistral]
+kind     = "openai_compatible"
+base_url = "https://api.mistral.ai/v1"
+
+[preset.groq]
+kind     = "openai_compatible"
+base_url = "https://api.groq.com/openai/v1"
+
+[preset.cerebras]
+kind     = "openai_compatible"
+base_url = "https://api.cerebras.ai/v1"
+
+[preset.together]
+kind     = "openai_compatible"
+base_url = "https://api.together.xyz/v1"
+
+[preset.fireworks]
+kind     = "openai_compatible"
+base_url = "https://api.fireworks.ai/inference/v1"
+
+[preset.openrouter]
+# Fronts many vendors behind one key - the widest single-key coverage.
+kind     = "openai_compatible"
+base_url = "https://openrouter.ai/api/v1"
+
+[preset.perplexity]
+kind     = "openai_compatible"
+base_url = "https://api.perplexity.ai"
+
+[preset.moonshot]
+kind     = "openai_compatible"
+base_url = "https://api.moonshot.ai/v1"
+
+[preset.qwen]
+kind     = "openai_compatible"
+base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+
+[preset.zhipu]
+# GLM family (ChatGLM / GLM-4). Zhipu AI exposes an OpenAI-style endpoint.
+kind     = "openai_compatible"
+base_url = "https://open.bigmodel.cn/api/paas/v4"
+
+
+# ---------------------------------------------------------------------------
+# Local - no key, no quota, no network
+# ---------------------------------------------------------------------------
+
+[preset.ollama]
+kind     = "openai_compatible"
+base_url = "http://localhost:11434/v1"
+api_key  = "not-required"
+
+[preset.lmstudio]
+kind     = "openai_compatible"
+base_url = "http://localhost:1234/v1"
+api_key  = "not-required"
+
+[preset.vllm]
+kind     = "openai_compatible"
+base_url = "http://localhost:8000/v1"
+api_key  = "not-required"
+
+[preset.llamacpp]
+kind     = "openai_compatible"
+base_url = "http://localhost:8080/v1"
+api_key  = "not-required"
